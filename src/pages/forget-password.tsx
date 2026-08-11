@@ -3,12 +3,14 @@ import { useState } from "react";
 import type { SyntheticEvent } from "react";
 import { Link } from "react-router-dom";
 import illustration from "../assets/images/illustration.png";
+import { requestPasswordReset } from "../services/api";
 
 function ForgetPassword() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [apiResponseMessage, setApiResponseMessage] = useState("");
 
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
@@ -22,16 +24,18 @@ function ForgetPassword() {
     setIsSubmitting(true);
 
     try {
-      // Ready for API integration (e.g. await sendPasswordResetEmail(email))
-      console.log("Password reset requested for:", email);
-      
-      // Simulate network request for now
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const response = await requestPasswordReset({
+        email: email.trim(),
+      });
 
+      console.log("Password reset response:", response);
+      setApiResponseMessage(
+        response.message || "If an account exists for this email, a reset link has been sent."
+      );
       setIsSubmitted(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Password reset error:", err);
-      setErrorMessage("Failed to send reset email. Please try again.");
+      setErrorMessage(err.message || "Failed to send reset email. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +94,7 @@ function ForgetPassword() {
                 <h3 className="font-bold text-base">Reset link sent!</h3>
               </div>
               <p className="text-slate-700 text-sm leading-relaxed">
-                We have sent instructions to <span className="font-semibold text-slate-900">{email}</span>. Check your inbox to set a new password.
+                {apiResponseMessage || `We have sent instructions to ${email}. Check your inbox to set a new password.`}
               </p>
               <button
                 type="button"

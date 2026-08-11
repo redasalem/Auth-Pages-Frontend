@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { SyntheticEvent, ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import illustration from "../assets/images/illustration.png";
+import { registerUser } from "../services/api";
 
 function SignUp() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -15,6 +17,7 @@ function SignUp() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,23 +27,62 @@ function SignUp() {
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
     setErrorMessage("");
+    setSuccessMessage("");
+
+    // Client-side validations matching OpenAPI spec
+    if (formData.username.length < 3 || formData.username.length > 32) {
+      setErrorMessage("Username must be between 3 and 32 characters.");
+      return;
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(formData.username)) {
+      setErrorMessage("Username can only contain letters, numbers, and underscores.");
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setErrorMessage("Passwords do not match!");
       return;
     }
 
+    // Phone format check (E.164 pattern e.g., +201234567890)
+    let contactNumber = formData.phone.trim();
+    if (contactNumber && !contactNumber.startsWith("+")) {
+      contactNumber = "+" + contactNumber;
+    }
+
+    const phoneRegex = /^\+[1-9]\d{6,14}$/;
+    if (contactNumber && !phoneRegex.test(contactNumber)) {
+      setErrorMessage("Contact number must be in E.164 format (e.g. +201234567890).");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Ready for API integration
-      console.log("Register form submitted:", formData);
+      const response = await registerUser({
+        email: formData.email.trim(),
+        username: formData.username.trim(),
+        contactNumber: contactNumber,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
 
-      // Simulate API response
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    } catch (err) {
+      console.log("User registered successfully:", response);
+      setSuccessMessage("Account created successfully! Redirecting to login...");
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 1800);
+    } catch (err: any) {
       console.error("Registration error:", err);
-      setErrorMessage("Registration failed. Please try again.");
+      setErrorMessage(err.message || "Registration failed. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -94,6 +136,12 @@ function SignUp() {
               </div>
             )}
 
+            {successMessage && (
+              <div className="bg-emerald-50 text-emerald-700 text-xs px-4 py-3 rounded-xl border border-emerald-200 font-medium">
+                {successMessage}
+              </div>
+            )}
+
             <div>
               <input
                 type="email"
@@ -122,9 +170,10 @@ function SignUp() {
               <input
                 type="tel"
                 name="phone"
-                placeholder="Contact number"
+                placeholder="Contact number (e.g. +201234567890)"
                 value={formData.phone}
                 onChange={handleChange}
+                required
                 className="w-full bg-[#F0EDFF] text-slate-800 placeholder-[#B4AEF6] px-5 py-4 rounded-xl text-sm font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#4C43D9]/50 transition-all"
               />
             </div>
@@ -200,7 +249,7 @@ function SignUp() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Registering...
+                  Connecting to server...
                 </>
               ) : (
                 "Register"
@@ -235,4 +284,5 @@ function SignUp() {
 }
 
 export default SignUp;
+
 

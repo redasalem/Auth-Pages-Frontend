@@ -1,9 +1,11 @@
 import { useState } from "react";
 import type { SyntheticEvent, ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import illustration from "../assets/images/illustration.png";
+import { loginUser } from "../services/api";
 
 function Login() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -11,6 +13,7 @@ function Login() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -20,17 +23,30 @@ function Login() {
   const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
     setErrorMessage("");
+    setSuccessMessage("");
     setIsSubmitting(true);
 
     try {
-      // Ready for API integration
-      console.log("Login form submitted:", formData);
+      const response = await loginUser({
+        identifier: formData.email.trim(),
+        password: formData.password,
+      });
 
-      // Simulate API response
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    } catch (err) {
+      console.log("Login successful:", response);
+      if (response.accessToken) {
+        localStorage.setItem("accessToken", response.accessToken);
+        localStorage.setItem("user", JSON.stringify(response.user));
+      }
+
+      setSuccessMessage(`Welcome back, ${response.user?.username || "user"}! Logged in successfully.`);
+
+      setTimeout(() => {
+        // Ready for post-login redirection or dashboard
+        // navigate("/dashboard");
+      }, 1500);
+    } catch (err: any) {
       console.error("Login error:", err);
-      setErrorMessage("Invalid credentials. Please try again.");
+      setErrorMessage(err.message || "Invalid credentials. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -84,11 +100,17 @@ function Login() {
               </div>
             )}
 
+            {successMessage && (
+              <div className="bg-emerald-50 text-emerald-700 text-xs px-4 py-3 rounded-xl border border-emerald-200 font-medium">
+                {successMessage}
+              </div>
+            )}
+
             <div>
               <input
-                type="email"
+                type="text"
                 name="email"
-                placeholder="Enter Email"
+                placeholder="Enter Email or Username"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -146,7 +168,7 @@ function Login() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Logging in...
+                  Connecting to server...
                 </>
               ) : (
                 "Login"
@@ -181,4 +203,5 @@ function Login() {
 }
 
 export default Login;
+
 
