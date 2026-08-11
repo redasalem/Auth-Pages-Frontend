@@ -1,10 +1,50 @@
 import { useState } from "react";
+import type { SyntheticEvent, ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import illustration from "../assets/images/illustration.png";
 
 function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    username: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: SyntheticEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage("Passwords do not match!");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Ready for API integration
+      console.log("Register form submitted:", formData);
+
+      // Simulate API response
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    } catch (err) {
+      console.error("Registration error:", err);
+      setErrorMessage("Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans selection:bg-[#4C43D9] selection:text-white">
@@ -17,7 +57,6 @@ function SignUp() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 lg:px-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pb-12">
-        
         {/* Left Welcome Info */}
         <section className="lg:col-span-6 space-y-6 flex flex-col justify-center">
           <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 leading-[1.25] tracking-tight">
@@ -48,11 +87,20 @@ function SignUp() {
         <section className="lg:col-span-5 lg:col-start-8 flex flex-col justify-center">
           <h2 className="text-3xl font-bold text-slate-900 mb-8">Sign Up</h2>
 
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {errorMessage && (
+              <div className="bg-red-50 text-red-600 text-xs px-4 py-3 rounded-xl border border-red-200">
+                {errorMessage}
+              </div>
+            )}
+
             <div>
               <input
                 type="email"
+                name="email"
                 placeholder="Enter Email"
+                value={formData.email}
+                onChange={handleChange}
                 required
                 className="w-full bg-[#F0EDFF] text-slate-800 placeholder-[#B4AEF6] px-5 py-4 rounded-xl text-sm font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#4C43D9]/50 transition-all"
               />
@@ -61,7 +109,10 @@ function SignUp() {
             <div>
               <input
                 type="text"
+                name="username"
                 placeholder="Create User name"
+                value={formData.username}
+                onChange={handleChange}
                 required
                 className="w-full bg-[#F0EDFF] text-slate-800 placeholder-[#B4AEF6] px-5 py-4 rounded-xl text-sm font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#4C43D9]/50 transition-all"
               />
@@ -70,7 +121,10 @@ function SignUp() {
             <div>
               <input
                 type="tel"
+                name="phone"
                 placeholder="Contact number"
+                value={formData.phone}
+                onChange={handleChange}
                 className="w-full bg-[#F0EDFF] text-slate-800 placeholder-[#B4AEF6] px-5 py-4 rounded-xl text-sm font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#4C43D9]/50 transition-all"
               />
             </div>
@@ -78,7 +132,10 @@ function SignUp() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
                 placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
                 required
                 className="w-full bg-[#F0EDFF] text-slate-800 placeholder-[#B4AEF6] px-5 py-4 pr-12 rounded-xl text-sm font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#4C43D9]/50 transition-all"
               />
@@ -105,7 +162,10 @@ function SignUp() {
             <div className="relative">
               <input
                 type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
                 placeholder="Confirm Password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 required
                 className="w-full bg-[#F0EDFF] text-slate-800 placeholder-[#B4AEF6] px-5 py-4 pr-12 rounded-xl text-sm font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#4C43D9]/50 transition-all"
               />
@@ -131,9 +191,20 @@ function SignUp() {
 
             <button
               type="submit"
-              className="w-full bg-[#4C43D9] hover:bg-[#3F36C8] text-white font-medium py-4 rounded-xl shadow-[0_10px_25px_rgba(76,67,217,0.35)] transition-all cursor-pointer text-base pt-3.5 mt-2 active:scale-[0.99]"
+              disabled={isSubmitting}
+              className="w-full bg-[#4C43D9] hover:bg-[#3F36C8] text-white font-medium py-4 rounded-xl shadow-[0_10px_25px_rgba(76,67,217,0.35)] transition-all cursor-pointer text-base pt-3.5 mt-2 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Register
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Registering...
+                </>
+              ) : (
+                "Register"
+              )}
             </button>
           </form>
 
@@ -158,10 +229,10 @@ function SignUp() {
             </button>
           </div>
         </section>
-
       </main>
     </div>
   );
 }
 
 export default SignUp;
+
